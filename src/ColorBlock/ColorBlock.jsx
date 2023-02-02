@@ -1,8 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useDrop, useDrag } from "react-dnd";
 import "./ColorBlock.css";
-import Bucket from "./Bucket";
-import Block from "./Block.jsx";
 
 function ColorBlock() {
     const [start, setStart] = useState(true);
@@ -139,8 +136,7 @@ function ColorBlock() {
                         </ul>
                         <ul className="block-list">
                             {colors.map((color, index) => (
-                                <Bucket key={index} />
-                                // <li className="block" key={index} />
+                                <li className="block" key={index} />
                             ))}
                         </ul>
                     </section>
@@ -149,17 +145,11 @@ function ColorBlock() {
                         <ul className="block-list">
                             <mark>Vos blocs ici</mark>
                             {guesses.map((guess, index) => (
-                                <Block
-                                    customStyle={{
-                                        backgroundColor: `#${guess}`,
-                                    }}
+                                <li
+                                    className="block"
+                                    style={{ backgroundColor: `#${guess}` }}
                                     key={index}
                                 />
-                                // <li
-                                //     className="block"
-                                //     style={{ backgroundColor: `#${guess}` }}
-                                //     key={index}
-                                // />
                             ))}
                         </ul>
                     </section>
