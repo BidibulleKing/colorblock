@@ -1,0 +1,154 @@
+*,
+::before,
+::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --grey: #a8a0b1;
+}
+
+html {
+    font-family: "Cascadia Mono", sans-serif;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+}
+
+li {
+    list-style: none;
+}
+
+#root {
+    width: 100vw;
+    height: 100vh;
+}
+
+.modal {
+    text-align: center;
+    transition: opacity 1s ease-out;
+}
+.modal h1 {
+    z-index: 1;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    font-size: 3vw;
+    font-weight: normal;
+    transform: translate(-50%, -50%);
+}
+.modal__background {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-color: var(--grey);
+    opacity: 90%;
+}
+.disappear {
+    visibility: hidden;
+}
+
+.main {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    padding: 3%;
+}
+
+.heart-list {
+    display: flex;
+    justify-content: flex-end;
+}
+.heart {
+    display: inline-block;
+    aspect-ratio: 1;
+    margin: 0 0.5rem;
+    border-image: radial-gradient(red 69%, #0000 70%) 84.5% fill/100%;
+    clip-path: polygon(-41% 0, 50% 91%, 141% 0);
+}
+
+.block-container {
+    display: flex;
+    width: inherit;
+    height: inherit;
+}
+
+.block {
+    background-color: var(--grey);
+    height: 100%;
+}
+
+.block-list {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 50%;
+}
+
+.left-blocks {
+    display: flex;
+    width: 60%;
+}
+.left-blocks .block {
+    margin-top: 5%;
+    display: grid;
+    place-items: center;
+}
+.left-blocks .block-list:first-child .block {
+    border-right: 1px solid black;
+}
+
+.right-blocks {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    width: 40%;
+    text-align: center;
+}
+.right-blocks .block:hover {
+    cursor: grab;
+}
+.right-blocks .block:active {
+    cursor: grabbing;
+}
+.right-blocks .block-list {
+    height: 95%;
+}
+.right-blocks .block {
+    margin-top: 10%;
+}
+.right-blocks mark {
+    position: relative;
+    margin-bottom: 2vh;
+    background-color: transparent;
+    color: var(--grey);
+}
+.right-blocks mark::after {
+    content: "";
+    position: absolute;
+    bottom: -0.5rem;
+    left: 50%;
+    display: inline-block;
+    padding: 3px;
+    border: solid var(--grey);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) scale(2);
+}
+
+@media screen and (max-width: 700px) {
+    html {
+        font-size: 80%;
+    }
+
+    .right-blocks mark::after {
+        transform: rotate(45deg) scale(1.5);
+    }
+}
