@@ -1,15 +1,19 @@
 import { useState, useEffect, useRef } from "react";
+import { DndContext } from "@dnd-kit/core";
+import Block from "./Block";
+import Bucket from "./Bucket";
 import "./ColorBlock.css";
 
 function ColorBlock() {
+    const [parent, setParent] = useState(null);
     const [start, setStart] = useState(true);
     const [score, setScore] = useState(0);
     const [chosenLevel, setChosenLevel] = useState(0);
     const [colors, setColors] = useState([]);
     const [guesses, setGuesses] = useState([]);
-    const [goodAnswers, setGoodAnswers] = useState([]);
     const [isWin, setIsWin] = useState(false);
     const [isLose, setIsLose] = useState(false);
+    const [isGuessed, setIsGuessed] = useState([]);
 
     const noticeModal = useRef(null);
 
@@ -43,15 +47,17 @@ function ColorBlock() {
                     ...fetchedColors,
                     fetchedColor.colors[1].hex.clean,
                 ];
-                setGoodAnswers((prevState) => [
-                    ...prevState,
-                    {
-                        question: colors[i],
-                        answer: fetchedColor.colors[1].hex.clean,
-                    },
-                ]);
             }
             setGuesses(fetchedColors);
+            fetchedColors.map((fetchedColor) =>
+                setIsGuessed((prevState) => [
+                    ...isGuessed,
+                    {
+                        color: fetchedColor,
+                        isGuessed: false,
+                    },
+                ])
+            );
         })();
     }, [colors]);
 
@@ -102,59 +108,82 @@ function ColorBlock() {
         }, timing);
     };
 
+    function handleDragEnd(event) {
+        console.log(event);
+        if (event.active.id === event.over.id) {
+            event.activatorEvent.target.style.display = "none";
+            // let isGuessedCopy = isGuessed.slice();
+            // const index = isGuessedCopy.findIndex(
+            //     (object) => object.color == event.over.id
+            // );
+            // isGuessedCopy[index].isGuessed = true;
+            // console.log(isGuessedCopy);
+            console.log(isGuessed);
+        }
+    }
+
     return (
         <>
-            <section className="modal" ref={noticeModal}>
-                <h1>
-                    Complètez les blocs de gauches à l’aide de vos blocs de
-                    droite. <br /> <br /> Nous cherchons ici...{" "}
-                    <strong>{level[chosenLevel].indication}</strong> !
-                </h1>
-                <div className="modal__background" />
-            </section>
+            <DndContext onDragEnd={handleDragEnd}>
+                <section className="modal" ref={noticeModal}>
+                    <h1>
+                        Complètez les blocs de gauches à l’aide de vos blocs de
+                        droite. <br /> <br /> Nous cherchons ici...{" "}
+                        <strong>{level[chosenLevel].indication}</strong> !
+                    </h1>
+                    <div className="modal__background" />
+                </section>
 
-            <main className="main">
-                <header>
-                    <h2>Votre score : {score}</h2>
-                    <ul className="heart-list">
-                        <li className="heart"></li>
-                        <li className="heart"></li>
-                        <li className="heart"></li>
-                    </ul>
-                </header>
+                <main className="main">
+                    <header>
+                        <h2>Votre score : {score}</h2>
+                        <ul className="heart-list">
+                            <li className="heart"></li>
+                            <li className="heart"></li>
+                            <li className="heart"></li>
+                        </ul>
+                    </header>
 
-                <div className="block-container">
-                    <section className="left-blocks">
-                        <ul className="block-list">
-                            {colors.map((color, index) => (
-                                <li
-                                    className="block"
-                                    style={{ backgroundColor: `#${color}` }}
-                                    key={index}
-                                />
-                            ))}
-                        </ul>
-                        <ul className="block-list">
-                            {colors.map((color, index) => (
-                                <li className="block" key={index} />
-                            ))}
-                        </ul>
-                    </section>
+                    <div className="block-container">
+                        <section className="left-blocks">
+                            <ul className="block-list">
+                                {colors.map((color) => (
+                                    <li
+                                        className="block"
+                                        style={{ backgroundColor: `#${color}` }}
+                                        key={color}
+                                    />
+                                ))}
+                            </ul>
+                            <ul className="block-list">
+                                {guesses.map((color) => (
+                                    <Bucket
+                                        id={color}
+                                        key={color}
+                                        style={{
+                                            backgroundColor: `#${isGuessed}`,
+                                        }}
+                                        isGuessed={false}
+                                    />
+                                ))}
+                            </ul>
+                        </section>
 
-                    <section className="right-blocks">
-                        <ul className="block-list">
-                            <mark>Vos blocs ici</mark>
-                            {guesses.map((guess, index) => (
-                                <li
-                                    className="block"
-                                    style={{ backgroundColor: `#${guess}` }}
-                                    key={index}
-                                />
-                            ))}
-                        </ul>
-                    </section>
-                </div>
-            </main>
+                        <section className="right-blocks">
+                            <ul className="block-list">
+                                <mark>Vos blocs ici</mark>
+                                {guesses.map((color) => (
+                                    <Block
+                                        id={color}
+                                        color={color}
+                                        key={color}
+                                    />
+                                ))}
+                            </ul>
+                        </section>
+                    </div>
+                </main>
+            </DndContext>
         </>
     );
 }
