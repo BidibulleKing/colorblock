@@ -73,7 +73,7 @@ function ColorBlock() {
                     fetchedColor.colors[1].hex.clean,
                 ];
             }
-            setGuesses(fetchedColors);
+            setGuesses(shuffleArray(fetchedColors));
             fetchedColors.map((fetchedColor) =>
                 setIsGuessed((prevState) => [
                     ...prevState,
@@ -122,6 +122,18 @@ function ColorBlock() {
             colors = [...colors, generateRandomHexColor()];
         }
         return colors;
+    };
+
+    /**
+     * Shuffle the array with Durstenfeld's shuffle algorithm
+     * @param {Array} array
+     */
+    const shuffleArray = (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
     };
 
     const generateNotice = (message, isRestarting = false) => {
