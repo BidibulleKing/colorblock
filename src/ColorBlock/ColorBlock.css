@@ -12,6 +12,7 @@
 
 html {
     font-family: "Cascadia Mono", sans-serif;
+    overflow: hidden;
 }
 
 header {
@@ -67,6 +68,7 @@ li {
     justify-content: flex-end;
 }
 .heart {
+    z-index: -1;
     display: inline-block;
     aspect-ratio: 1;
     margin: 0 0.5rem;

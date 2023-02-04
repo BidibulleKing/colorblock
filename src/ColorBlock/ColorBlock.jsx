@@ -5,9 +5,9 @@ import Bucket from "./Bucket";
 import "./ColorBlock.css";
 
 function ColorBlock() {
-    const [parent, setParent] = useState(null);
     const [start, setStart] = useState(true);
     const [score, setScore] = useState(0);
+    const [lifes, setLifes] = useState(3);
     const [chosenLevel, setChosenLevel] = useState(0);
     const [colors, setColors] = useState([]);
     const [guesses, setGuesses] = useState([]);
@@ -23,6 +23,23 @@ function ColorBlock() {
             indication: "les semblables",
         },
     ];
+
+    const messages = [
+        {
+            title: "Bravo !",
+            content: "Vous passez au niveau suivant…",
+        },
+        {
+            title: "Ne baissez pas les bras !",
+            content: "Retentez votre chance.",
+        },
+    ];
+
+    const hearts = [];
+    // generate hearts
+    for (let i = 0; i < lifes; i++) {
+        hearts.push(<li className="heart" key={i} />);
+    }
 
     useEffect(() => {
         setStart(true);
@@ -66,20 +83,11 @@ function ColorBlock() {
         colors;
     }, [isWin]);
 
-    /**
-     *
-     * @param {string} hexCode Hexadecimal code without #
-     * @param {string} range Color range
-     * @returns {Promise} JSON promise
-     */
-    const fetchColorApi = async (hexCode, range) => {
-        const response = await fetch(
-            `https://www.thecolorapi.com/scheme?hex=${hexCode}&mode=${range}&count=2`
-        );
-        const json = await response.json();
-
-        return json;
-    };
+    useEffect(() => {
+        if (lifes <= 0) {
+            generateNotice(message);
+        }
+    }, [lifes]);
 
     const generateRandomHexColor = () => {
         return Math.floor(Math.random() * 16777215).toString(16);
@@ -92,6 +100,20 @@ function ColorBlock() {
             colors = [...colors, generateRandomHexColor()];
         }
         return colors;
+    };
+
+    /**
+     * @param {string} hexCode Hexadecimal code without #
+     * @param {string} range Color range
+     * @returns {Promise} JSON promise
+     */
+    const fetchColorApi = async (hexCode, range) => {
+        const response = await fetch(
+            `https://www.thecolorapi.com/scheme?hex=${hexCode}&mode=${range}&count=2`
+        );
+        const json = await response.json();
+
+        return json;
     };
 
     /**
@@ -108,23 +130,32 @@ function ColorBlock() {
         }, timing);
     };
 
+    /**
+     * Controls drop event
+     * @param {Event} event
+     */
     function handleDragEnd(event) {
         console.log(event);
+
         if (event.active.id === event.over.id) {
-            event.activatorEvent.target.style.display = "none";
-            // let isGuessedCopy = isGuessed.slice();
-            // const index = isGuessedCopy.findIndex(
-            //     (object) => object.color == event.over.id
-            // );
-            // isGuessedCopy[index].isGuessed = true;
-            // console.log(isGuessedCopy);
-            console.log(isGuessed);
+            // * win
+            const draggable = event.activatorEvent.target;
+            const droppable =
+                event.collisions[0].data.droppableContainer.node.current;
+
+            draggable.style.display = "none";
+            droppable.style.backgroundColor = `#${event.over.id}`;
+
+            setScore(score + 5);
+        } else {
+            // * lose
+            setLifes(lifes - 1);
         }
     }
 
     return (
         <>
-            <DndContext onDragEnd={handleDragEnd}>
+            <DndContext onDragEnd={handleDragEnd} autoScroll={false}>
                 <section className="modal" ref={noticeModal}>
                     <h1>
                         Complètez les blocs de gauches à l’aide de vos blocs de
@@ -137,11 +168,7 @@ function ColorBlock() {
                 <main className="main">
                     <header>
                         <h2>Votre score : {score}</h2>
-                        <ul className="heart-list">
-                            <li className="heart"></li>
-                            <li className="heart"></li>
-                            <li className="heart"></li>
-                        </ul>
+                        <ul className="heart-list">{hearts}</ul>
                     </header>
 
                     <div className="block-container">
