@@ -4,17 +4,13 @@ import { useDroppable } from "@dnd-kit/core";
 export function Bucket(props) {
     const { isOver, setNodeRef } = useDroppable({
         id: props.id,
+        disabled: props.isGuessed,
     });
     const style = {
         opacity: isOver ? 1 : 0.5,
-        backgroundColor: props.isGuessed && isOver ? `#${props.id}` : "",
     };
 
-    return (
-        <div className="block" ref={setNodeRef} style={style}>
-            {props.children}
-        </div>
-    );
+    return <li className="block" ref={setNodeRef} style={style} />;
 }
 
 export default Bucket;

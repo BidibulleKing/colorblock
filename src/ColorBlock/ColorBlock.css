@@ -8,6 +8,8 @@
 
 :root {
     --grey: #a8a0b1;
+    --blue: #36cedc;
+    --red: #f05255;
 }
 
 html {
@@ -33,14 +35,25 @@ li {
     text-align: center;
     transition: opacity 1s ease-out;
 }
-.modal h1 {
+.modal__text {
     z-index: 1;
     position: fixed;
     top: 50%;
     left: 50%;
-    font-size: 3vw;
+    font-size: 200%;
     font-weight: normal;
     transform: translate(-50%, -50%);
+}
+.modal__text p {
+    margin-top: 2rem;
+}
+.modal__button {
+    cursor: pointer;
+    padding: 1rem;
+    margin-top: 2rem;
+    border: 2px solid black;
+    border-radius: 2rem;
+    background-color: var(--blue);
 }
 .modal__background {
     position: fixed;
@@ -72,7 +85,7 @@ li {
     display: inline-block;
     aspect-ratio: 1;
     margin: 0 0.5rem;
-    border-image: radial-gradient(red 69%, #0000 70%) 84.5% fill/100%;
+    border-image: radial-gradient(var(--red) 69%, #0000 70%) 84.5% fill/100%;
     clip-path: polygon(-41% 0, 50% 91%, 141% 0);
 }
 
@@ -145,12 +158,18 @@ li {
     transform: rotate(45deg) scale(2);
 }
 
-@media screen and (max-width: 700px) {
+@media screen and (max-width: 830px) {
     html {
         font-size: 80%;
     }
 
     .right-blocks mark::after {
         transform: rotate(45deg) scale(1.5);
+    }
+}
+
+@media screen and (max-width: 635px) {
+    .modal {
+        font-size: 60%;
     }
 }

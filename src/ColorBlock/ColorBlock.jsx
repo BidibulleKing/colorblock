@@ -5,15 +5,16 @@ import Bucket from "./Bucket";
 import "./ColorBlock.css";
 
 function ColorBlock() {
+    const [chosenLevel, setChosenLevel] = useState(0);
     const [start, setStart] = useState(true);
     const [score, setScore] = useState(0);
-    const [lifes, setLifes] = useState(3);
-    const [chosenLevel, setChosenLevel] = useState(0);
+    const [lives, setLives] = useState(3);
     const [colors, setColors] = useState([]);
     const [guesses, setGuesses] = useState([]);
+    const [startNotice, setStartNotice] = useState();
+    const [isGuessed, setIsGuessed] = useState([]);
     const [isWin, setIsWin] = useState(false);
     const [isLose, setIsLose] = useState(false);
-    const [isGuessed, setIsGuessed] = useState([]);
 
     const noticeModal = useRef(null);
 
@@ -21,33 +22,40 @@ function ColorBlock() {
         {
             range: "analogic",
             indication: "les semblables",
+            title: "Complètez les blocs de gauches à l’aide de vos blocs de droite.",
+            content: "Nous cherchons ici : les semblable",
         },
     ];
 
-    const messages = [
-        {
+    const messages = {
+        win: {
             title: "Bravo !",
             content: "Vous passez au niveau suivant…",
         },
-        {
+        lose: {
             title: "Ne baissez pas les bras !",
             content: "Retentez votre chance.",
         },
-    ];
+    };
 
     const hearts = [];
     // generate hearts
-    for (let i = 0; i < lifes; i++) {
+    for (let i = 0; i < lives; i++) {
         hearts.push(<li className="heart" key={i} />);
     }
 
     useEffect(() => {
         setStart(true);
-        setColors(generateThreeColors());
     }, []);
 
     useEffect(() => {
-        notice(3000);
+        if (!start) return;
+
+        setStartNotice(() => generateNotice(level[chosenLevel]));
+        setColors(generateThreeColors());
+        setLives(3);
+        fadeNotice();
+        setStart(false);
     }, [start]);
 
     useEffect(() => {
@@ -68,7 +76,7 @@ function ColorBlock() {
             setGuesses(fetchedColors);
             fetchedColors.map((fetchedColor) =>
                 setIsGuessed((prevState) => [
-                    ...isGuessed,
+                    ...prevState,
                     {
                         color: fetchedColor,
                         isGuessed: false,
@@ -79,15 +87,29 @@ function ColorBlock() {
     }, [colors]);
 
     useEffect(() => {
-        if (isWin) setChosenLevel(chosenLevel + 1);
-        colors;
+        if (!isWin) return;
+
+        setChosenLevel(chosenLevel + 1);
+        setStart(true);
+        setIsWin(false);
     }, [isWin]);
 
     useEffect(() => {
-        if (lifes <= 0) {
-            generateNotice(message);
-        }
-    }, [lifes]);
+        if (!isLose) return;
+
+        saveScore(score);
+        setScore(0);
+        setStartNotice(() => generateNotice(messages.lose, true));
+        showNotice();
+        setChosenLevel(0);
+        setIsLose(false);
+    }, [isLose]);
+
+    useEffect(() => {
+        if (lives > 0) return;
+
+        setIsLose(true);
+    }, [lives]);
 
     const generateRandomHexColor = () => {
         return Math.floor(Math.random() * 16777215).toString(16);
@@ -100,6 +122,28 @@ function ColorBlock() {
             colors = [...colors, generateRandomHexColor()];
         }
         return colors;
+    };
+
+    const generateNotice = (message, isRestarting = false) => {
+        return (
+            <section className="modal" ref={noticeModal}>
+                <div className="modal__text">
+                    <h1>{message.title}</h1>
+                    <p>
+                        <strong>{message.content}</strong>
+                    </p>
+                    {isRestarting && (
+                        <button
+                            className="modal__button"
+                            onClick={() => setStart(true)}
+                        >
+                            Rejouer
+                        </button>
+                    )}
+                </div>
+                <div className="modal__background" />
+            </section>
+        );
     };
 
     /**
@@ -116,11 +160,20 @@ function ColorBlock() {
         return json;
     };
 
+    const saveScore = (scoreToSave) => {
+        fetch("http://remydelepaule.vpnuser.lan:8000/api/scores", {
+            method: "POST",
+            body: JSON.stringify({
+                score: scoreToSave,
+            }),
+            mode: "no-cors",
+        });
+    };
+
     /**
-     * Hide modal after timing
-     * @param {number} timing
+     * @param {number} timing to delay
      */
-    const notice = (timing) => {
+    const fadeNotice = (timing = 3000) => {
         setTimeout(() => {
             noticeModal.current.style.opacity = 0;
             setTimeout(
@@ -130,40 +183,52 @@ function ColorBlock() {
         }, timing);
     };
 
+    const showNotice = () => {
+        noticeModal.current.style.display = "block";
+        noticeModal.current.style.opacity = 1;
+    };
+
+    /**
+     * Disable the guessed droppable component
+     * @param {String} color without "#"
+     */
+    const userAsGuessedAction = (color) => {
+        const isGuessedCopy = isGuessed.slice();
+        let isGuessedValue = isGuessedCopy.find(
+            (object) => object.color === color
+        );
+        isGuessedValue.isGuessed = true;
+        setIsGuessed(isGuessedCopy);
+    };
+
     /**
      * Controls drop event
      * @param {Event} event
      */
     function handleDragEnd(event) {
-        console.log(event);
+        if (!event.over) return;
+
+        const draggable = event.activatorEvent.target;
+        const droppable =
+            event.collisions[0].data.droppableContainer.node.current;
 
         if (event.active.id === event.over.id) {
             // * win
-            const draggable = event.activatorEvent.target;
-            const droppable =
-                event.collisions[0].data.droppableContainer.node.current;
-
             draggable.style.display = "none";
             droppable.style.backgroundColor = `#${event.over.id}`;
 
+            userAsGuessedAction(event.over.id);
             setScore(score + 5);
         } else {
             // * lose
-            setLifes(lifes - 1);
+            setLives(lives - 1);
         }
     }
 
     return (
         <>
             <DndContext onDragEnd={handleDragEnd} autoScroll={false}>
-                <section className="modal" ref={noticeModal}>
-                    <h1>
-                        Complètez les blocs de gauches à l’aide de vos blocs de
-                        droite. <br /> <br /> Nous cherchons ici...{" "}
-                        <strong>{level[chosenLevel].indication}</strong> !
-                    </h1>
-                    <div className="modal__background" />
-                </section>
+                {startNotice}
 
                 <main className="main">
                     <header>
@@ -187,10 +252,12 @@ function ColorBlock() {
                                     <Bucket
                                         id={color}
                                         key={color}
-                                        style={{
-                                            backgroundColor: `#${isGuessed}`,
-                                        }}
-                                        isGuessed={false}
+                                        isGuessed={
+                                            isGuessed.find(
+                                                (object) =>
+                                                    object.color === color
+                                            ).isGuessed
+                                        }
                                     />
                                 ))}
                             </ul>
