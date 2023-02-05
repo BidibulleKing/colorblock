@@ -5,6 +5,7 @@ import Bucket from "./Bucket";
 import "./ColorBlock.css";
 
 function ColorBlock() {
+    // * DATA
     const [chosenLevel, setChosenLevel] = useState(0);
     const [start, setStart] = useState(true);
     const [score, setScore] = useState(0);
@@ -18,12 +19,30 @@ function ColorBlock() {
 
     const noticeModal = useRef(null);
 
-    const level = [
+    const levels = [
         {
             range: "analogic",
             indication: "les semblables",
-            title: "Complètez les blocs de gauches à l’aide de vos blocs de droite.",
-            content: "Nous cherchons ici : les semblable",
+            title: "Complètez les blocs de gauche à l’aide de vos blocs de droite.",
+            content: "Nous cherchons ici : les semblables.",
+        },
+        {
+            range: "complement",
+            indication: "les complémentaires",
+            title: "Complètez les blocs de gauche à l'aide de vos blocs de droite.",
+            content: "Nous cherchons ici : les complémentaires.",
+        },
+        {
+            range: "triad",
+            indication: "les triades",
+            title: "Complètez les blocs de gauche à l'aide de vos blocs de droite.",
+            content: "Nous cherchons ici : les triades.",
+        },
+        {
+            range: "quad",
+            indication: "les carrés",
+            title: "Complètez les blocs de gauche à l'aide de vos blocs de droite.",
+            content: "Nous cherchons ici : les carrés.",
         },
     ];
 
@@ -36,6 +55,10 @@ function ColorBlock() {
             title: "Ne baissez pas les bras !",
             content: "Retentez votre chance.",
         },
+        finish: {
+            title: "Formidable !",
+            content: "Vous avez surmonté toutes les épreuves !",
+        },
     };
 
     const hearts = [];
@@ -44,6 +67,8 @@ function ColorBlock() {
         hearts.push(<li className="heart" key={i} />);
     }
 
+    // * USE EFFECTS
+
     useEffect(() => {
         setStart(true);
     }, []);
@@ -51,29 +76,34 @@ function ColorBlock() {
     useEffect(() => {
         if (!start) return;
 
-        setStartNotice(() => generateNotice(level[chosenLevel]));
-        setColors(generateThreeColors());
-        setLives(3);
+        setStartNotice(() => generateNotice(levels[chosenLevel]));
         fadeNotice();
+        setColors(generateThreeColors());
         setStart(false);
     }, [start]);
 
     useEffect(() => {
         if (colors.length < 3) return;
 
+        isGuessed.splice(0, isGuessed.length);
+
         (async () => {
+            const range = levels[chosenLevel].range;
+            let color;
             let fetchedColors = [];
+
             for (let i = 0; i < 3; i++) {
-                let fetchedColor = await fetchColorApi(
-                    colors[i],
-                    level[chosenLevel].range
-                );
+                color = colors[i];
+                let fetchedColor = await fetchColorApi(color, range);
+
                 fetchedColors = [
                     ...fetchedColors,
-                    fetchedColor.colors[1].hex.clean,
+                    fetchedColor.colors[range === "analogic" ? 1 : 0].hex.clean,
                 ];
             }
-            setGuesses(shuffleArray(fetchedColors));
+
+            // User colors
+            setGuesses(fetchedColors);
             fetchedColors.map((fetchedColor) =>
                 setIsGuessed((prevState) => [
                     ...prevState,
@@ -89,19 +119,31 @@ function ColorBlock() {
     useEffect(() => {
         if (!isWin) return;
 
-        setChosenLevel(chosenLevel + 1);
-        setStart(true);
+        if (chosenLevel === levels.length - 1) {
+            // if hit max levels
+            setChosenLevel(0);
+            setStartNotice(() => generateNotice(messages.finish, true));
+            setScore(0);
+            setLives(3);
+        } else {
+            setChosenLevel(chosenLevel + 1);
+            setStartNotice(() => generateNotice(messages.win, true));
+        }
+
+        showNotice();
         setIsWin(false);
     }, [isWin]);
 
     useEffect(() => {
         if (!isLose) return;
 
-        saveScore(score);
-        setScore(0);
+        // TODO: save score to database
+        // saveScore(score);
         setStartNotice(() => generateNotice(messages.lose, true));
         showNotice();
         setChosenLevel(0);
+        setScore(0);
+        setLives(3);
         setIsLose(false);
     }, [isLose]);
 
@@ -110,6 +152,16 @@ function ColorBlock() {
 
         setIsLose(true);
     }, [lives]);
+
+    useEffect(() => {
+        let notGuessed = isGuessed.filter(
+            (currentGuessed) => currentGuessed.isGuessed === false
+        );
+
+        if (notGuessed.length <= 0 && guesses.length > 0) setIsWin(true);
+    }, [isGuessed]);
+
+    // * FUNCTIONS
 
     const generateRandomHexColor = () => {
         return Math.floor(Math.random() * 16777215).toString(16);
@@ -149,7 +201,9 @@ function ColorBlock() {
                             className="modal__button"
                             onClick={() => setStart(true)}
                         >
-                            Rejouer
+                            {Object.values(message).includes("Bravo !")
+                                ? "Continuer"
+                                : "Rejouer"}
                         </button>
                     )}
                 </div>
@@ -278,7 +332,7 @@ function ColorBlock() {
                         <section className="right-blocks">
                             <ul className="block-list">
                                 <mark>Vos blocs ici</mark>
-                                {guesses.map((color) => (
+                                {shuffleArray(guesses.slice()).map((color) => (
                                     <Block
                                         id={color}
                                         color={color}
